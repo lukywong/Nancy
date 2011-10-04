@@ -10,22 +10,123 @@
     using System.Web.Razor;
     using System.Web.Razor.Generator;
     using Microsoft.CSharp;
+    using Microsoft.VisualBasic;
     using Responses;
+
+    public interface IRazorViewRenderer
+    {
+        IEnumerable<string> Assemblies { get; }
+
+        string Extension { get; }
+
+        RazorEngineHost Host { get; }
+
+        CodeDomProvider Provider { get; }
+    }
+    
+    public class VisualBasicRazorViewRenderer : IRazorViewRenderer
+    {
+        public VisualBasicRazorViewRenderer()
+        {
+            this.Assemblies = new List<string>();
+            //{
+            //    GetAssemblyPath(typeof (Microsoft.CSharp.RuntimeBinder.Binder))
+            //};
+
+            this.Provider = new VBCodeProvider();
+
+            this.Host =
+                new RazorEngineHost(new VBRazorCodeLanguage())
+                {
+                    DefaultBaseClass = typeof(NancyRazorViewBase).FullName,
+                    DefaultNamespace = "RazorOutput",
+                    DefaultClassName = "RazorView"
+                };
+
+            //this.Host.NamespaceImports.Add("Microsoft.CSharp.RuntimeBinder");
+        }
+
+        public IEnumerable<string> Assemblies { get; private set; }
+
+        public string Extension
+        {
+            get { return "vbhtml"; }
+        }
+
+        public RazorEngineHost Host { get; private set; }
+
+        public CodeDomProvider Provider { get; private set; }
+
+        private static string GetAssemblyPath(Type type)
+        {
+            return GetAssemblyPath(type.Assembly);
+        }
+
+        private static string GetAssemblyPath(Assembly assembly)
+        {
+            return new Uri(assembly.EscapedCodeBase).LocalPath;
+        }
+    }
+    
+    public class CSharpRazorViewRenderer : IRazorViewRenderer
+    {
+        public CSharpRazorViewRenderer()
+        {
+            this.Assemblies = new List<string>
+            {
+                GetAssemblyPath(typeof (Microsoft.CSharp.RuntimeBinder.Binder))
+            };
+
+            this.Provider = new CSharpCodeProvider();
+
+            this.Host =
+                new RazorEngineHost(new CSharpRazorCodeLanguage())
+                {
+                    DefaultBaseClass = typeof(NancyRazorViewBase).FullName,
+                    DefaultNamespace = "RazorOutput",
+                    DefaultClassName = "RazorView"
+                };
+
+            this.Host.NamespaceImports.Add("Microsoft.CSharp.RuntimeBinder");
+        }
+
+        public IEnumerable<string> Assemblies { get; private set; }
+
+        public string Extension
+        {
+            get { return "cshtml"; }
+        }
+
+        public RazorEngineHost Host { get; private set; }
+
+        public CodeDomProvider Provider { get; private set; }
+
+        private static string GetAssemblyPath(Type type)
+        {
+            return GetAssemblyPath(type.Assembly);
+        }
+
+        private static string GetAssemblyPath(Assembly assembly)
+        {
+            return new Uri(assembly.EscapedCodeBase).LocalPath;
+        }
+    }
 
     /// <summary>
     /// View engine for rendering razor views.
     /// </summary>
     public class RazorViewEngine : IViewEngine
     {
-        private readonly RazorTemplateEngine engine;
         private readonly CodeDomProvider codeDomProvider;
         private readonly IRazorConfiguration razorConfiguration;
+        private readonly IEnumerable<IRazorViewRenderer> viewRenderers;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RazorViewEngine"/> class with a default configuration.
         /// </summary>
         public RazorViewEngine() : this(new DefaultRazorConfiguration())
         {
+            
         }
 
         /// <summary>
@@ -34,27 +135,24 @@
         /// <param name="configuration"></param>
         public RazorViewEngine(IRazorConfiguration configuration)
         {
+            this.viewRenderers = new List<IRazorViewRenderer>
+            {
+                new CSharpRazorViewRenderer(),
+                new VisualBasicRazorViewRenderer()
+            };
+
             this.razorConfiguration = configuration;
-            this.engine = this.GetRazorTemplateEngine();
             this.codeDomProvider = new CSharpCodeProvider();
         }
 
-        private RazorTemplateEngine GetRazorTemplateEngine()
+        private RazorTemplateEngine GetRazorTemplateEngine(RazorEngineHost engineHost)
         {
-            var host = 
-                new RazorEngineHost(new CSharpRazorCodeLanguage())
-                {
-                    DefaultBaseClass = typeof(NancyRazorViewBase).FullName,
-                    DefaultNamespace = "RazorOutput",
-                    DefaultClassName = "RazorView"
-                };
+            engineHost.GeneratedClassContext = 
+                new GeneratedClassContext("Execute", "Write", "WriteLiteral", null, null, null, "DefineSection");
 
-            host.GeneratedClassContext = new GeneratedClassContext("Execute", "Write", "WriteLiteral", null, null, null, "DefineSection");
-
-            host.NamespaceImports.Add("System");
-            host.NamespaceImports.Add("System.IO");
-            host.NamespaceImports.Add("System.Web");
-            host.NamespaceImports.Add("Microsoft.CSharp.RuntimeBinder");
+            engineHost.NamespaceImports.Add("System");
+            engineHost.NamespaceImports.Add("System.IO");
+            engineHost.NamespaceImports.Add("System.Web");
 
             if (this.razorConfiguration != null)
             {
@@ -63,41 +161,47 @@
                 {
                     foreach (var n in namespaces)
                     {
-                        host.NamespaceImports.Add(n);
+                        engineHost.NamespaceImports.Add(n);
                     }
                 }
             }
 
-            return new RazorTemplateEngine(host);
+            return new RazorTemplateEngine(engineHost);
         }
 
-        private Func<NancyRazorViewBase> GetCompiledViewFactory<TModel>(TextReader reader, Assembly referencingAssembly) 
+        private Func<NancyRazorViewBase> GetCompiledViewFactory<TModel>(string extension, TextReader reader, Assembly referencingAssembly)
         {
-            var razorResult = this.engine.GenerateCode(reader);
+            var renderer = this.viewRenderers
+                .Where(x => x.Extension.Equals(extension, StringComparison.OrdinalIgnoreCase))
+                .First();
 
-            //using (var sw = new StringWriter()) {
-            //    this.codeDomProvider.GenerateCodeFromCompileUnit(razorResult.GeneratedCode, sw, new CodeGeneratorOptions());
-            //    code = sw.GetStringBuilder().ToString();
-            //}
+            var engine =
+                this.GetRazorTemplateEngine(renderer.Host);
 
-            var viewFactory = this.GenerateRazorViewFactory(this.codeDomProvider, razorResult, referencingAssembly);
+            var razorResult = 
+                engine.GenerateCode(reader);
+
+            var viewFactory = 
+                this.GenerateRazorViewFactory(renderer.Provider, razorResult, referencingAssembly, renderer.Assemblies);
 
             return viewFactory;
         }
 
-        private Func<NancyRazorViewBase> GenerateRazorViewFactory(CodeDomProvider codeProvider, GeneratorResults razorResult, Assembly referencingAssembly)
+        private Func<NancyRazorViewBase> GenerateRazorViewFactory(CodeDomProvider codeProvider, GeneratorResults razorResult, Assembly referencingAssembly, IEnumerable<string> rendererSpecificAssemblies)
         {
-            // Compile the generated code into an assembly
             var outputAssemblyName =
                 Path.Combine(Path.GetTempPath(), String.Format("Temp_{0}.dll", Guid.NewGuid().ToString("N")));
 
             var assemblies = new List<string>
             {
-                GetAssemblyPath(typeof(Microsoft.CSharp.RuntimeBinder.Binder)),
                 GetAssemblyPath(typeof(System.Runtime.CompilerServices.CallSite)),
                 GetAssemblyPath(typeof(IHtmlString)),
                 GetAssemblyPath(Assembly.GetExecutingAssembly())
             };
+
+            assemblies = assemblies
+                .Union(rendererSpecificAssemblies)
+                .ToList();
 
             if (this.razorConfiguration != null)
             {
@@ -115,8 +219,11 @@
                 assemblies.Add(GetAssemblyPath(referencingAssembly));
             }
 
-            var compilerParameters = new CompilerParameters(assemblies.ToArray(), outputAssemblyName);
-            var results = codeProvider.CompileAssemblyFromDom(compilerParameters, razorResult.GeneratedCode);
+            var compilerParameters = 
+                new CompilerParameters(assemblies.ToArray(), outputAssemblyName);
+
+            var results = 
+                codeProvider.CompileAssemblyFromDom(compilerParameters, razorResult.GeneratedCode);
 
             if (results.Errors.HasErrors)
             {
@@ -128,15 +235,14 @@
 
                 return () => new NancyRazorErrorView(err);
             }
-            // Load the assembly
+            
             var assembly = Assembly.LoadFrom(outputAssemblyName);
             if (assembly == null)
             {
                 const string error = "Error loading template assembly";
                 return () => new NancyRazorErrorView(error);
             }
-
-            // Get the template type
+            
             var type = assembly.GetType("RazorOutput.RazorView");
             if (type == null) 
             {
@@ -165,7 +271,7 @@
         {
             var viewFactory = renderContext.ViewCache.GetOrAdd(
                 viewLocationResult, 
-                x => this.GetCompiledViewFactory<dynamic>(x.Contents.Invoke(), referencingAssembly));
+                x => this.GetCompiledViewFactory<dynamic>(x.Extension, x.Contents.Invoke(), referencingAssembly));
 
             var view = viewFactory.Invoke();
 
@@ -181,7 +287,7 @@
         /// <remarks>The extensions should not have a leading dot in the name.</remarks>
         public IEnumerable<string> Extensions
         {
-            get { return new[] { "cshtml" }; }
+            get { return new[] { "cshtml", "vbhtml" }; }
         }
 
         public void Initialize(ViewEngineStartupContext viewEngineStartupContext)
@@ -197,9 +303,8 @@
         /// <returns>A response.</returns>
         public Response RenderView(ViewLocationResult viewLocationResult, dynamic model, IRenderContext renderContext)
         {
-            //@(section)?[\s]*(?<name>[A-Za-z]*)[\s]*{(?<content>[^\}]*)}?
-
             Assembly referencingAssembly = null;
+
             if (model != null)
             {
                 var underlyingSystemType = model.GetType().UnderlyingSystemType;

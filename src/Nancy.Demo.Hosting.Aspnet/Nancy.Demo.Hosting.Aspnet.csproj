@@ -164,6 +164,7 @@
     <Content Include="Views\razor-layout.cshtml" />
     <None Include="Views\anon.spark" />
     <Content Include="Views\csrf.cshtml" />
+    <None Include="Views\razorvb.vbhtml" />
     <None Include="Views\dot.liquid" />
     <None Include="Views\ndjango-base.django" />
     <Content Include="Views\razor-dependency.cshtml" />
