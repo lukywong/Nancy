@@ -11,6 +11,7 @@
     using System.Web.Razor.Generator;
     using Microsoft.CSharp;
     using Microsoft.VisualBasic;
+    using Nancy.Extensions;
     using Responses;
 
     public interface IRazorViewRenderer
@@ -29,9 +30,6 @@
         public VisualBasicRazorViewRenderer()
         {
             this.Assemblies = new List<string>();
-            //{
-            //    GetAssemblyPath(typeof (Microsoft.CSharp.RuntimeBinder.Binder))
-            //};
 
             this.Provider = new VBCodeProvider();
 
@@ -42,8 +40,6 @@
                     DefaultNamespace = "RazorOutput",
                     DefaultClassName = "RazorView"
                 };
-
-            //this.Host.NamespaceImports.Add("Microsoft.CSharp.RuntimeBinder");
         }
 
         public IEnumerable<string> Assemblies { get; private set; }
@@ -56,16 +52,6 @@
         public RazorEngineHost Host { get; private set; }
 
         public CodeDomProvider Provider { get; private set; }
-
-        private static string GetAssemblyPath(Type type)
-        {
-            return GetAssemblyPath(type.Assembly);
-        }
-
-        private static string GetAssemblyPath(Assembly assembly)
-        {
-            return new Uri(assembly.EscapedCodeBase).LocalPath;
-        }
     }
     
     public class CSharpRazorViewRenderer : IRazorViewRenderer
@@ -74,7 +60,7 @@
         {
             this.Assemblies = new List<string>
             {
-                GetAssemblyPath(typeof (Microsoft.CSharp.RuntimeBinder.Binder))
+                typeof(Microsoft.CSharp.RuntimeBinder.Binder).GetAssemblyPath()
             };
 
             this.Provider = new CSharpCodeProvider();
@@ -100,16 +86,6 @@
         public RazorEngineHost Host { get; private set; }
 
         public CodeDomProvider Provider { get; private set; }
-
-        private static string GetAssemblyPath(Type type)
-        {
-            return GetAssemblyPath(type.Assembly);
-        }
-
-        private static string GetAssemblyPath(Assembly assembly)
-        {
-            return new Uri(assembly.EscapedCodeBase).LocalPath;
-        }
     }
 
     /// <summary>
