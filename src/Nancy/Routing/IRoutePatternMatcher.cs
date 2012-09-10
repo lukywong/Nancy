@@ -1,5 +1,7 @@
 ﻿namespace Nancy.Routing
 {
+    using System.Collections.Generic;
+
     /// <summary>
     /// Defined the functionality that is required by a route pattern matcher.
     /// </summary>
@@ -14,5 +16,7 @@
         /// <param name="context">The <see cref="NancyContext"/> instance for the current request.</param>
         /// <returns>An <see cref="IRoutePatternMatchResult"/> instance, containing the outcome of the match.</returns>
         IRoutePatternMatchResult Match(string requestedPath, string routePath, NancyContext context);
+
+        IRoutePatternMatchResult Match(string requestedPath, string routePath, IEnumerable<string> segments, NancyContext context);
     }
 }

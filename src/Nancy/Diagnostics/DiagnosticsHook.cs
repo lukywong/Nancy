@@ -24,12 +24,12 @@ namespace Nancy.Diagnostics
         private const string DiagsCookieName = "__ncd";
         private const int DiagnosticsSessionTimeoutMinutes = 15;
 
-        public static void Enable(DiagnosticsConfiguration diagnosticsConfiguration, IPipelines pipelines, IEnumerable<IDiagnosticsProvider> providers, IRootPathProvider rootPathProvider, IEnumerable<ISerializer> serializers, IRequestTracing requestTracing, NancyInternalConfiguration configuration, IModelBinderLocator modelBinderLocator, IEnumerable<IResponseProcessor> responseProcessors)
+        public static void Enable(DiagnosticsConfiguration diagnosticsConfiguration, IPipelines pipelines, IEnumerable<IDiagnosticsProvider> providers, IRootPathProvider rootPathProvider, IEnumerable<ISerializer> serializers, IRequestTracing requestTracing, NancyInternalConfiguration configuration, IModelBinderLocator modelBinderLocator, IEnumerable<IResponseProcessor> responseProcessors, IRoutePatternSplitter routePatternSplitter)
         {
             var keyGenerator = new DefaultModuleKeyGenerator();
             var diagnosticsModuleCatalog = new DiagnosticsModuleCatalog(keyGenerator, providers, rootPathProvider, requestTracing, configuration, diagnosticsConfiguration);
 
-            var diagnosticsRouteCache = new RouteCache(diagnosticsModuleCatalog, keyGenerator, new DefaultNancyContextFactory());
+            var diagnosticsRouteCache = new RouteCache(diagnosticsModuleCatalog, keyGenerator, new DefaultNancyContextFactory(), routePatternSplitter);
 
             var diagnosticsRouteResolver = new DefaultRouteResolver(
                 diagnosticsModuleCatalog,

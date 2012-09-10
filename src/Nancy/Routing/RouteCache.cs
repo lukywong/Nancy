@@ -11,6 +11,7 @@
     public class RouteCache : Dictionary<string, List<Tuple<int, RouteDescription>>>, IRouteCache
     {
         private readonly IModuleKeyGenerator moduleKeyGenerator;
+        private readonly IRoutePatternSplitter routePatternSplitter;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RouteCache"/> class.
@@ -18,9 +19,10 @@
         /// <param name="moduleCatalog">The <see cref="INancyModuleCatalog"/> that should be used by the cache.</param>
         /// <param name="moduleKeyGenerator">The <see cref="IModuleKeyGenerator"/> used to generate module keys.</param>
         /// <param name="contextFactory">The <see cref="INancyContextFactory"/> that should be used to create a context instance.</param>
-        public RouteCache(INancyModuleCatalog moduleCatalog, IModuleKeyGenerator moduleKeyGenerator, INancyContextFactory contextFactory)
+        public RouteCache(INancyModuleCatalog moduleCatalog, IModuleKeyGenerator moduleKeyGenerator, INancyContextFactory contextFactory, IRoutePatternSplitter routePatternSplitter)
         {
             this.moduleKeyGenerator = moduleKeyGenerator;
+            this.routePatternSplitter = routePatternSplitter;
 
             using (var context = contextFactory.Create())
             {
@@ -44,7 +46,15 @@
                 var moduleType = module.GetType();
                 var moduleKey = this.moduleKeyGenerator.GetKeyForModuleType(moduleType);
 
-                this.AddRoutesToCache(module.Routes.Select(r => r.Description), moduleKey);
+                var routes =
+                    module.Routes.Select(r => r.Description);
+
+                foreach (var routeDescription in routes)
+                {
+                    routeDescription.Segments = this.routePatternSplitter.Split(routeDescription.Path);
+                }
+
+                this.AddRoutesToCache(routes, moduleKey);
             }
         }
 

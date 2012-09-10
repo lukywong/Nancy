@@ -2,6 +2,8 @@ using System;
 
 namespace Nancy.Tests.Unit.Routing
 {
+    using System.Collections.Generic;
+    using System.Linq;
     using Nancy.Routing;
     using Xunit;
 
@@ -241,6 +243,33 @@ namespace Nancy.Tests.Unit.Routing
             // Then
             ((string)results.Parameters["name"]).ShouldEqual("filename");
             ((string)results.Parameters["format"]).ShouldEqual("cshtml");
+        }
+
+        [Fact]
+        public void Should_match_without_page_in_url()
+        {
+            // Given, When
+            var splitter = new DefaultRoutePatternSplitter();
+            var segments = splitter.Split(@"(?:videos)(?:~/page~/?(?<page>\d*))?");
+
+            var results = this.matcher.Match("/videos", @"(?:videos)(?:~/page~/?(?<page>\d*))?", segments , null);
+
+            // Then
+            results.IsMatch.ShouldBeTrue();
+        }
+
+        [Fact]
+        public void Should_match_and_give_page_value()
+        {
+            // Given, When
+            var splitter = new DefaultRoutePatternSplitter();
+            var segments = splitter.Split(@"/stuff/(?:videos)(?:~/page~/?(?<page>\d*))?");
+
+            var results = this.matcher.Match("/stuff/videos/page/123", @"/stuff/(?:videos)(?:~/page~/?(?<page>\d*))?", segments, null);
+
+            // Then
+            results.IsMatch.ShouldBeTrue();
+            ((string)results.Parameters["page"]).ShouldEqual("123");
         }
     }
 }

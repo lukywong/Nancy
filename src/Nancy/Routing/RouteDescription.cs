@@ -1,6 +1,7 @@
 namespace Nancy.Routing
 {
     using System;
+    using System.Collections.Generic;
 
     /// <summary>
     /// Represents the various parts of a route lambda.
@@ -47,5 +48,7 @@ namespace Nancy.Routing
         /// </summary>
         /// <value>A <see cref="string"/> containing the path of the route.</value>
         public string Path { get; private set; }
+
+        public IEnumerable<string> Segments { get; set; }
     }
 }
