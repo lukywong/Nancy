@@ -1,5 +1,4 @@
-﻿
-namespace Nancy.Testing
+﻿namespace Nancy.Testing
 {
     using System;
     using System.Globalization;
@@ -8,7 +7,6 @@ namespace Nancy.Testing
     using System.Collections.Generic;
     using System.Linq;
 
-    using Nancy.Authentication.Forms;
     using Nancy.Extensions;
     using Nancy.Helpers;
     using Nancy.Responses;
