@@ -273,33 +273,6 @@ namespace Nancy.Testing.Tests
             result.Body.AsString().ShouldEqual("ajax");
         }
 
-        [Fact]
-        public void Should_add_forms_authentication_cookie_to_the_request()
-        {
-            var userId = A.Dummy<Guid>();
-
-            var formsAuthConfig = new FormsAuthenticationConfiguration()
-            {
-                RedirectUrl = "/login",
-                UserMapper = A.Fake<IUserMapper>(),
-            };
-
-            var encryptedId = formsAuthConfig.CryptographyConfiguration.EncryptionProvider.Encrypt(userId.ToString());
-            var hmacBytes = formsAuthConfig.CryptographyConfiguration.HmacProvider.GenerateHmac(encryptedId);
-            var hmacString = Convert.ToBase64String(hmacBytes);
-            var cookieContents = String.Format("{1}{0}", encryptedId, hmacString);
-
-            var response = browser.Get("/cookie", (with) =>
-            {
-                with.HttpRequest();
-                with.FormsAuth(userId, formsAuthConfig);
-            });
-
-            var cookie = response.Cookies.Single(c => c.Name == FormsAuthentication.FormsAuthenticationCookieName);
-            var cookieValue = HttpUtility.UrlDecode(cookie.Value);
-            cookieValue.ShouldEqual(cookieContents);
-        }
-
         public class EchoModel
         {
             public string SomeString { get; set; }
