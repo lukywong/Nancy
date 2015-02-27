@@ -88,6 +88,14 @@
             }
         }
 
+        protected ITypeCatalog TypeCatalog
+        {
+            get
+            {
+                return new DefaultTypeCatalog();
+            }
+        }
+
         /// <summary>
         /// Nancy conventions
         /// </summary>
@@ -110,7 +118,7 @@
                 return
                     this.modules
                     ??
-                    (this.modules = AppDomainAssemblyTypeScanner
+                    (this.modules = this.TypeCatalog
                                         .TypesOf<INancyModule>(ScanMode.ExcludeNancy)
                                         .NotOfType<DiagnosticModule>()
                                         .Select(t => new ModuleRegistration(t))
@@ -125,7 +133,7 @@
         {
             get
             {
-                return AppDomainAssemblyTypeScanner.TypesOf<IViewEngine>();
+                return this.TypeCatalog.TypesOf<IViewEngine>();
             }
         }
 
@@ -136,7 +144,7 @@
         {
             get
             {
-                return AppDomainAssemblyTypeScanner.TypesOf<IModelBinder>();
+                return this.TypeCatalog.TypesOf<IModelBinder>();
             }
         }
 
@@ -147,7 +155,7 @@
         {
             get
             {
-                return AppDomainAssemblyTypeScanner.TypesOf<ITypeConverter>(ScanMode.ExcludeNancy);
+                return this.TypeCatalog.TypesOf<ITypeConverter>(ScanMode.ExcludeNancy);
             }
         }
 
@@ -156,7 +164,7 @@
         /// </summary>
         protected virtual IEnumerable<Type> BodyDeserializers
         {
-            get { return AppDomainAssemblyTypeScanner.TypesOf<IBodyDeserializer>(ScanMode.ExcludeNancy); }
+            get { return this.TypeCatalog.TypesOf<IBodyDeserializer>(ScanMode.ExcludeNancy); }
         }
 
         /// <summary>
@@ -164,7 +172,7 @@
         /// </summary>
         protected virtual IEnumerable<Type> ApplicationStartupTasks
         {
-            get { return AppDomainAssemblyTypeScanner.TypesOf<IApplicationStartup>(); }
+            get { return this.TypeCatalog.TypesOf<IApplicationStartup>(); }
         }
 
         /// <summary>
@@ -172,7 +180,7 @@
         /// </summary>
         protected virtual IEnumerable<Type> RequestStartupTasks
         {
-            get { return AppDomainAssemblyTypeScanner.TypesOf<IRequestStartup>(); }
+            get { return this.TypeCatalog.TypesOf<IRequestStartup>(); }
         }
 
         /// <summary>
@@ -180,7 +188,7 @@
         /// </summary>
         protected virtual IEnumerable<Type> RegistrationTasks
         {
-            get { return AppDomainAssemblyTypeScanner.TypesOf<IRegistrations>(); }
+            get { return this.TypeCatalog.TypesOf<IRegistrations>(); }
         }
 
         /// <summary>
@@ -196,7 +204,7 @@
         /// </summary>
         protected virtual IEnumerable<Type> ModelValidatorFactories
         {
-            get { return AppDomainAssemblyTypeScanner.TypesOf<IModelValidatorFactory>(); }
+            get { return this.TypeCatalog.TypesOf<IModelValidatorFactory>(); }
         }
 
         /// <summary>
@@ -567,6 +575,7 @@
                 new InstanceRegistration(typeof(NancyInternalConfiguration), this.InternalConfiguration),
                 new InstanceRegistration(typeof(DiagnosticsConfiguration), this.DiagnosticsConfiguration),
                 new InstanceRegistration(typeof(IRootPathProvider), this.RootPathProvider),
+                new InstanceRegistration(typeof(ITypeCatalog), this.TypeCatalog), 
             };
         }
 
@@ -634,9 +643,9 @@
             }
         }
 
-        private static IRootPathProvider GetRootPathProvider()
+        private IRootPathProvider GetRootPathProvider()
         {
-            var providerTypes = AppDomainAssemblyTypeScanner
+            var providerTypes = this.TypeCatalog
                 .TypesOf<IRootPathProvider>(ScanMode.ExcludeNancy)
                 .ToArray();
 
