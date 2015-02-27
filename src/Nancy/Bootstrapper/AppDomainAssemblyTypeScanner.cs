@@ -5,7 +5,6 @@ namespace Nancy.Bootstrapper
     using System.IO;
     using System.Linq;
     using System.Reflection;
-
     using Nancy.Extensions;
 
     /// <summary>
@@ -13,11 +12,6 @@ namespace Nancy.Bootstrapper
     /// </summary>
     public static class AppDomainAssemblyTypeScanner
     {
-        static AppDomainAssemblyTypeScanner()
-        {
-            LoadAssembliesWithNancyReferences();
-        }
-
         /// <summary>
         /// Nancy core assembly
         /// </summary>
@@ -279,6 +273,11 @@ namespace Nancy.Bootstrapper
         /// <returns>An <see cref="IEnumerable{T}"/> of types.</returns>
         public static IEnumerable<Type> TypesOf(Type type, ScanMode mode)
         {
+            if (!nancyReferencingAssembliesLoaded)
+            {
+                LoadAssembliesWithNancyReferences();
+            }
+
             var returnTypes =
                 Types.Where(type.IsAssignableFrom);
 
