@@ -88,6 +88,10 @@
             }
         }
 
+        /// <summary>
+        /// Gets the <see cref="ITypeCatalog"/> instance.
+        /// </summary>
+        /// <remarks>By default this will return a <see cref="DefaultTypeCatalog"/> instance.</remarks>
         protected ITypeCatalog TypeCatalog
         {
             get
