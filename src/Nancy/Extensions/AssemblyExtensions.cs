@@ -1,8 +1,12 @@
 namespace Nancy.Extensions
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using System.Reflection;
+
+    using Nancy.Bootstrapper;
 
     /// <summary>
     /// Assembly extension methods
@@ -33,6 +37,20 @@ namespace Nancy.Extensions
             }
 
             return types;
+        }
+
+        /// <summary>
+        /// Gets all types implementing a particular interface/base class
+        /// </summary>
+        /// <typeparam name="TType">Type to search for</typeparam>
+        /// <returns>An <see cref="IEnumerable{T}"/> of types.</returns>
+        /// <remarks>Will scan with <see cref="ScanMode.All"/>.</remarks>
+        public static IEnumerable<Type> TypesOf<TType>(this IEnumerable<Assembly> assemblies)
+        {
+            return assemblies
+                .SelectMany(assembly => assembly.SafeGetExportedTypes())
+                .Where(type => !type.IsAbstract)
+                .Where(type => typeof(TType).IsAssignableFrom(type));
         }
     }
 }

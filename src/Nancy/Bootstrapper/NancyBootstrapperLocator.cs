@@ -4,6 +4,8 @@
     using System.Collections.Generic;
     using System.Linq;
 
+    using Nancy.Extensions;
+
     /// <summary>
     /// Class for locating an INancyBootstrapper implementation.
     /// 
@@ -40,8 +42,9 @@
 
         private static Type GetBootstrapperType()
         {
-            var customBootstrappers = AppDomainAssemblyTypeScanner
-                .TypesOf<INancyBootstrapper>(ScanMode.ExcludeNancy)
+            var customBootstrappers = AppDomain.CurrentDomain
+                .GetNancyReferencingAssemblies()
+                .TypesOf<INancyBootstrapper>()
                 .ToList();
 
             if (!customBootstrappers.Any())

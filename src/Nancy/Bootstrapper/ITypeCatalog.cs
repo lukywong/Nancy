@@ -20,7 +20,7 @@ namespace Nancy.Bootstrapper
         /// Gets all types implementing a particular interface/base class
         /// </summary>
         /// <param name="type">Type to search for</param>
-        /// <param name="mode">A <see cref="ScanMode"/> value to determin which type set to scan in.</param>
+        /// <param name="mode">A <see cref="ScanMode"/> value to determine which type set to scan in.</param>
         /// <returns>An <see cref="IEnumerable{T}"/> of types.</returns>
         IEnumerable<Type> TypesOf(Type type, ScanMode mode);
 
@@ -36,7 +36,7 @@ namespace Nancy.Bootstrapper
         /// Gets all types implementing a particular interface/base class
         /// </summary>
         /// <typeparam name="TType">Type to search for</typeparam>
-        /// <param name="mode">A <see cref="ScanMode"/> value to determin which type set to scan in.</param>
+        /// <param name="mode">A <see cref="ScanMode"/> value to determine which type set to scan in.</param>
         /// <returns>An <see cref="IEnumerable{T}"/> of types.</returns>
         IEnumerable<Type> TypesOf<TType>(ScanMode mode);
     }

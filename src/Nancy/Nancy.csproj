@@ -162,6 +162,7 @@
     <Compile Include="Diagnostics\ResponseData.cs" />
     <Compile Include="DisabledStaticContentProvider.cs" />
     <Compile Include="ErrorHandling\RouteExecutionEarlyExitException.cs" />
+    <Compile Include="Extensions\AppDomainExtensions.cs" />
     <Compile Include="Extensions\ModelValidationErrorExtensions.cs" />
     <Compile Include="Extensions\RequestStreamExtensions.cs" />
     <Compile Include="Extensions\StreamExtensions.cs" />
